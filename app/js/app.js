@@ -512,6 +512,13 @@ class KidStoryApp {
         const card = e.target.closest('.author-page-card');
         if (!card) return;
 
+        // STT 버튼 클릭
+        const sttBtn = e.target.closest('.btn-stt-record');
+        if (sttBtn) {
+          this.handleSttInput(card, sttBtn);
+          return;
+        }
+
         // 1. AI 그림 생성 버튼 클릭
         const aiGenBtn = e.target.closest('.btn-ai-gen-image') || e.target.closest('.btn-regen-ai');
         if (aiGenBtn) {
@@ -524,8 +531,10 @@ class KidStoryApp {
         if (delImgBtn) {
           const wrapper = card.querySelector('.author-image-preview-wrapper');
           const preview = card.querySelector('.author-page-preview');
+          const actions = card.querySelector('.author-image-actions');
           if (preview) preview.src = '';
           if (wrapper) wrapper.style.display = 'none';
+          if (actions) actions.style.display = 'flex';
           if (window.audioEngine) window.audioEngine.playPageFlip();
           return;
         }
@@ -1140,16 +1149,19 @@ class KidStoryApp {
     card.innerHTML = `
       <div class="author-page-head">
         <strong></strong>
-        <button class="btn-remove-author-page" type="button">삭제</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-stt-record" type="button" title="마이크로 말해서 입력하기" style="background:#fff; border:1px solid #ddd; border-radius:12px; padding:4px 8px; font-size:12px; cursor:pointer;">🎙️ 음성 입력</button>
+          <button class="btn-remove-author-page" type="button">삭제</button>
+        </div>
       </div>
       <textarea class="input-text author-page-narration" maxlength="800" placeholder="이 쪽에서 읽어 줄 이야기 문장을 적어 주세요 (예: ${this.childProfile.name || '아이'}가 숲속 요정과 함께 반짝이는 칫솔로 이를 닦아요)."></textarea>
       
       <div class="author-image-actions">
         <button class="btn-ai-gen-image" type="button" title="적은 스토리를 바탕으로 AI 그림을 자동 생성합니다">
-          <span>🎨 AI 그림 생성하기</span>
+          <span>🎨 이미지 생성</span>
         </button>
         <label class="btn-upload-author-image" title="내가 가진 그림/사진을 직접 업로드합니다">
-          <span>📁 내 사진 올리기</span>
+          <span>📁 이미지 추가</span>
           <input type="file" class="author-page-image" accept="image/*" hidden>
         </label>
       </div>
@@ -1179,6 +1191,74 @@ class KidStoryApp {
   }
 
   // 🎨 작성된 문장을 인식하여 나노바나나 / 무료 오픈 AI 모델로 동화 삽화 자동 생성
+  handleSttInput(card, sttBtn) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("현재 브라우저에서는 음성 인식(마이크) 기능을 지원하지 않습니다. 크롬(Chrome) 브라우저를 이용해 주세요.");
+      return;
+    }
+
+    if (sttBtn.dataset.recording === 'true') {
+      if (this.currentRecognition) {
+        this.currentRecognition.stop();
+      }
+      return;
+    }
+
+    const textarea = card.querySelector('.author-page-narration');
+    if (!textarea) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ko-KR';
+    recognition.interimResults = true;
+    recognition.continuous = false; // Stop after a pause
+    this.currentRecognition = recognition;
+
+    let finalTranscript = textarea.value;
+
+    recognition.onstart = () => {
+      sttBtn.dataset.recording = 'true';
+      sttBtn.innerHTML = '🔴 듣는 중...';
+      sttBtn.style.borderColor = '#ff6b6b';
+      sttBtn.style.color = '#ff6b6b';
+    };
+
+    recognition.onresult = (event) => {
+      let interimTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += (finalTranscript ? ' ' : '') + event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+      textarea.value = finalTranscript + (interimTranscript ? ' ' + interimTranscript : '');
+    };
+
+    recognition.onend = () => {
+      sttBtn.dataset.recording = 'false';
+      sttBtn.innerHTML = '🎙️ 음성 입력';
+      sttBtn.style.borderColor = '#ddd';
+      sttBtn.style.color = 'inherit';
+      this.currentRecognition = null;
+    };
+
+    recognition.onerror = (event) => {
+      console.error('STT Error:', event.error);
+      sttBtn.dataset.recording = 'false';
+      sttBtn.innerHTML = '🎙️ 음성 입력';
+      sttBtn.style.borderColor = '#ddd';
+      sttBtn.style.color = 'inherit';
+      this.currentRecognition = null;
+    };
+
+    try {
+      recognition.start();
+    } catch (e) {
+      console.error("Speech recognition failed to start", e);
+    }
+  }
+
   async generatePageAiImage(card) {
     const narrationInput = card.querySelector('.author-page-narration');
     const narration = (narrationInput ? narrationInput.value : '').trim();
@@ -1193,10 +1273,12 @@ class KidStoryApp {
     const genBar = card.querySelector('.author-image-generating-bar');
     const wrapper = card.querySelector('.author-image-preview-wrapper');
     const preview = card.querySelector('.author-page-preview');
+    const actions = card.querySelector('.author-image-actions');
 
     if (genBtn) genBtn.disabled = true;
     if (genBar) genBar.style.display = 'flex';
     if (wrapper) wrapper.style.display = 'none';
+    if (actions) actions.style.display = 'none';
 
     try {
       const childName = this.childProfile.name || '아이';
@@ -1207,9 +1289,41 @@ class KidStoryApp {
             ? 'regal prince royal navy uniform with cape' 
             : 'hero cape with sparkling magical toothbrush');
 
-      // Teenieping & Princess Romi 3D Anime Pastel prompt recipe
+      // 그림 스타일 확인
+      const styleSelect = document.getElementById('selectAuthorImageStyle');
+      const styleType = styleSelect ? styleSelect.value : '3d';
+
+      // 텍스트 전처리
       const storyKeyword = narration.replace(/[\n\r]+/g, ' ').slice(0, 140);
-      const prompt = `masterpiece, best quality, ultra-detailed 3d anime storybook illustration, catch teenieping style, princess romi aesthetic, cute ${genderDesc} with sparkling jewel eyes named ${childName}, wearing ${outfitDesc}, cute fairy companion floating nearby, fairy tale book scene: ${storyKeyword}, magical pastel lighting, sparkling stars, vibrant cheerful atmosphere, 8k resolution`;
+      let prompt = '';
+
+      if (styleType === '3d') {
+        prompt = `masterpiece, best quality, ultra-detailed 3d anime storybook illustration, catch teenieping style, princess romi aesthetic, cute ${genderDesc} with sparkling jewel eyes named ${childName}, wearing ${outfitDesc}, cute fairy companion floating nearby, fairy tale book scene: ${storyKeyword}, magical pastel lighting, sparkling stars, vibrant cheerful atmosphere, 8k resolution`;
+      } else if (styleType === 'ghibli') {
+        prompt = `masterpiece, Studio Ghibli style animation, anime aesthetic, warm sunlight, beautiful landscape, lush nature, cute ${genderDesc} named ${childName}, wearing ${outfitDesc}, cute fairy companion, scene: ${storyKeyword}, magical atmosphere, detailed background`;
+      } else if (styleType === 'disney') {
+        prompt = `masterpiece, classic Disney 2D animation style, traditional cel animation, vintage fairy tale, cute ${genderDesc} named ${childName}, wearing ${outfitDesc}, cute fairy companion, scene: ${storyKeyword}, charming characters, nostalgic`;
+      } else if (styleType === 'watercolor') {
+        prompt = `masterpiece, beautiful soft watercolor children's book illustration, gentle brush strokes, cute ${genderDesc} named ${childName}, wearing ${outfitDesc}, cute fairy companion, fairy tale scene: ${storyKeyword}, pastel colors, warm lighting, storybook style`;
+      } else if (styleType === 'pastel') {
+        prompt = `masterpiece, soft chalk pastel drawing, gentle colors, dreamy aesthetic, cute ${genderDesc} named ${childName}, wearing ${outfitDesc}, cute fairy companion, scene: ${storyKeyword}, ethereal, warm lighting`;
+      } else if (styleType === 'crayon') {
+        prompt = `cute child's crayon drawing, textured wax crayon art, colorful and messy but charming, cute ${genderDesc} named ${childName}, wearing ${outfitDesc}, cute fairy, scene: ${storyKeyword}, bright vivid colors, childlike innocence, nursery art`;
+      } else if (styleType === 'pencil') {
+        prompt = `masterpiece, delicate colored pencil sketch, beautiful storybook art, soft shading, cute ${genderDesc} named ${childName}, wearing ${outfitDesc}, cute fairy companion, scene: ${storyKeyword}, warm cozy atmosphere, highly detailed sketch`;
+      } else if (styleType === 'oil') {
+        prompt = `masterpiece, beautiful oil painting, thick brush strokes, classic children's book illustration, cute ${genderDesc} named ${childName}, wearing ${outfitDesc}, cute fairy companion, scene: ${storyKeyword}, rich colors, canvas texture`;
+      } else if (styleType === 'papercut') {
+        prompt = `masterpiece, papercut art, layered paper illustration, diorama style, cute ${genderDesc} named ${childName}, wearing ${outfitDesc}, cute fairy companion, scene: ${storyKeyword}, crisp edges, paper texture, depth`;
+      } else if (styleType === 'clay') {
+        prompt = `masterpiece, claymation style, cute clay figures, Aardman animations style, 3D clay art, cute ${genderDesc} named ${childName}, wearing ${outfitDesc}, cute fairy companion, scene: ${storyKeyword}, plasticine texture, studio lighting`;
+      } else if (styleType === 'pop-up') {
+        prompt = `masterpiece, 3D pop-up book illustration, paper engineering, cute ${genderDesc} named ${childName}, wearing ${outfitDesc}, cute fairy companion, scene: ${storyKeyword}, standing paper figures, magical storybook opening`;
+      } else if (styleType === 'pixel') {
+        prompt = `masterpiece, 16-bit pixel art, cute SNES RPG style, cute ${genderDesc} named ${childName}, wearing ${outfitDesc}, cute fairy companion, scene: ${storyKeyword}, vibrant colors, retro gaming aesthetic`;
+      } else {
+        prompt = `masterpiece, best quality, ultra-detailed 3d anime storybook illustration, catch teenieping style, princess romi aesthetic, cute ${genderDesc} with sparkling jewel eyes named ${childName}, wearing ${outfitDesc}, cute fairy companion floating nearby, fairy tale book scene: ${storyKeyword}, magical pastel lighting, sparkling stars, vibrant cheerful atmosphere, 8k resolution`;
+      }
 
       const seed = Math.floor(Math.random() * 899999) + 100000;
       const encodedPrompt = encodeURIComponent(prompt);
@@ -1260,6 +1374,9 @@ class KidStoryApp {
     } finally {
       if (genBtn) genBtn.disabled = false;
       if (genBar) genBar.style.display = 'none';
+      if (wrapper && wrapper.style.display === 'none' && actions) {
+        actions.style.display = 'flex';
+      }
     }
   }
 
@@ -1268,6 +1385,7 @@ class KidStoryApp {
     const card = input.closest('.author-page-card');
     const wrapper = card ? card.querySelector('.author-image-preview-wrapper') : null;
     const preview = card ? card.querySelector('.author-page-preview') : null;
+    const actions = card ? card.querySelector('.author-image-actions') : null;
     if (!file || !preview) return;
     if (file.size > 4 * 1024 * 1024) {
       alert('그림은 4MB 이하로 넣어 주세요.');
@@ -1278,6 +1396,7 @@ class KidStoryApp {
     reader.onload = (evt) => {
       preview.src = evt.target.result;
       if (wrapper) wrapper.style.display = 'block';
+      if (actions) actions.style.display = 'none';
       if (window.audioEngine) window.audioEngine.playSparkle();
     };
     reader.readAsDataURL(file);
@@ -1902,6 +2021,7 @@ class KidStoryApp {
 
     const speakNow = () => {
       if (requestId !== this.ttsRequestId || !this.speechUtterance) return;
+      window.speechSynthesis.cancel();
       window.speechSynthesis.speak(this.speechUtterance);
     };
     setTimeout(speakNow, 60);

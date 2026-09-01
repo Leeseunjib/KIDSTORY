@@ -6,7 +6,7 @@
 ========================================================= */
 :root {
   --font-main: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-story: 'Gaegu', 'Pretendard', cursive, sans-serif;
+  --font-story: 'Pretendard', 'NanumSquareRound', sans-serif;
   --font-display: 'Outfit', 'Pretendard', sans-serif;
 
   /* Soft Pastel Colors (Warm, Cozy, Non-Neon) */
@@ -128,6 +128,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .btn-nav-shelf:hover {
@@ -171,6 +172,7 @@ body {
   cursor: pointer;
   box-shadow: var(--shadow-sm);
   transition: var(--transition-bounce);
+  white-space: nowrap;
 }
 
 .btn-parent-gate:hover {
@@ -1321,11 +1323,13 @@ body {
 .narration-text-content {
   flex: 1;
   font-family: var(--font-story, 'Pretendard', sans-serif);
-  font-size: 26px;
-  line-height: 1.55;
-  font-weight: 800;
+  font-size: 24px;
+  line-height: 1.7;
+  font-weight: 700;
   color: #2D3436;
-  letter-spacing: 0.3px;
+  letter-spacing: -0.5px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .narration-word {
@@ -1338,9 +1342,7 @@ body {
 .narration-word.highlight {
   color: #FF4757;
   background: #FFE8E4;
-  transform: scale(1.12);
-  font-weight: 900;
-  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3);
+  font-weight: 800;
 }
 
 .book-nav-bar {
@@ -1365,6 +1367,7 @@ body {
   gap: 8px;
   box-shadow: var(--shadow-sm);
   transition: var(--transition-bounce);
+  white-space: nowrap;
 }
 
 .btn-nav.prev {
@@ -2399,3 +2402,95 @@ input:checked + .slider:before {
   margin-top: 24px;
 }
 
+/* =========================================================
+   Responsive Design & Media Queries
+========================================================= */
+@media (max-width: 1024px) {
+  .narration-text-content {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 12px 16px;
+  }
+  
+  .brand-name {
+    font-size: 20px;
+  }
+  
+  .btn-nav-shelf, .btn-parent-gate {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  .scene-container {
+    max-height: 280px;
+  }
+  
+  .narration-glass-box {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+  
+  .narration-text-content {
+    font-size: 19px;
+    line-height: 1.6;
+  }
+  
+  .btn-tts-speaker {
+    width: 42px;
+    height: 42px;
+    font-size: 18px;
+  }
+  
+  .book-nav-bar {
+    padding: 0 8px;
+  }
+  
+  .btn-nav {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 10px 12px;
+  }
+  
+  .header-controls {
+    gap: 6px;
+  }
+  
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+  
+  .btn-nav-shelf span, .btn-parent-gate span {
+    display: none; /* Hide icons on very small screens to save space */
+  }
+  
+  .scene-container {
+    max-height: 240px;
+  }
+  
+  .narration-glass-box {
+    padding: 12px 14px;
+    min-height: 100px;
+  }
+  
+  .narration-text-content {
+    font-size: 17px;
+    line-height: 1.5;
+  }
+  
+  .btn-nav {
+    padding: 8px 12px;
+    font-size: 13px;
+    gap: 4px;
+  }
+}

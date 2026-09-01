@@ -187,6 +187,23 @@
               <label class="form-label" for="inputAuthorTitle">동화 제목</label>
               <input type="text" id="inputAuthorTitle" class="input-text" maxlength="40" placeholder="예: 민우의 치카치카 모험">
             </div>
+            <div class="form-group">
+              <label class="form-label" for="selectAuthorImageStyle">그림 스타일</label>
+              <select id="selectAuthorImageStyle" class="input-text">
+                <option value="3d">3D 애니메이션 (기본)</option>
+                <option value="ghibli">지브리 감성 애니</option>
+                <option value="disney">디즈니 클래식 2D</option>
+                <option value="watercolor">수채화 동화책</option>
+                <option value="pastel">파스텔 드로잉</option>
+                <option value="crayon">크레파스 그림</option>
+                <option value="pencil">색연필 스케치</option>
+                <option value="oil">부드러운 유화</option>
+                <option value="papercut">페이퍼 아트 (종이공예)</option>
+                <option value="clay">클레이 아트 (찰흙인형)</option>
+                <option value="pop-up">입체 팝업북</option>
+                <option value="pixel">레트로 픽셀 아트</option>
+              </select>
+            </div>
             <p class="story-source-hint">쪽마다 읽어 줄 문장과 그림을 넣으면, 시작 버튼에서 요정이 그대로 읽어 줍니다.</p>
             <div id="authorPagesList" class="author-pages-list"></div>
             <button class="btn-add-author-page" id="btnAddAuthorPage" type="button">＋ 페이지 추가</button>
