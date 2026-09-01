@@ -22,13 +22,18 @@
 <body>
 
   <!-- Top Header Navigation -->
-  <header class="app-header">
+  <header class="app-header" id="appHeader" style="display: none;">
     <div class="brand-logo" id="brandLogo">
       <div class="logo-icon">📚</div>
       <div class="brand-name">Kid<span>Story</span></div>
     </div>
 
     <div class="header-controls">
+      <div class="user-profile-badge" id="userProfileBadge" style="display:none;">
+        <span class="user-avatar-emoji" id="userAvatarEmoji">👤</span>
+        <span class="user-name-text" id="headerUserName">대표님</span>
+        <button class="btn-header-logout" id="btnHeaderLogout" title="로그아웃">🚪</button>
+      </div>
       <button class="btn-nav-shelf" id="btnHeaderLibrary" title="동화 서재로 이동">
         <span>📚</span> 동화 서재
       </button>
@@ -42,8 +47,77 @@
   <!-- Main Content Views -->
   <main class="main-container">
 
+    <!-- [View 0-A] 🌟 Splash Logo Screen -->
+    <section class="view-section active" id="viewSplash">
+      <div class="splash-container">
+        <div class="splash-halo"></div>
+        <div class="splash-logo-card">
+          <div class="splash-mascot-float">🧚</div>
+          <div class="splash-icon-anim">📚</div>
+          <h1 class="splash-title">Kid<span class="splash-highlight">Story</span></h1>
+          <p class="splash-tagline">세상에 하나뿐인 내 아이 맞춤형 인터랙티브 동화</p>
+          <div class="splash-badge">✨ AI 맞춤 스토리 · 3D 캐릭터 · AR 카메라 치카</div>
+          <div class="splash-loading-bar">
+            <div class="splash-loading-fill"></div>
+          </div>
+          <button class="btn-splash-skip" id="btnSplashSkip" type="button">화면을 눌러 바로 시작하기 ➔</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- [View 0-B] 🔐 Parent Auth & Login Screen -->
+    <section class="view-section" id="viewAuth">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="auth-icon-circle">📖</div>
+          <h2 class="auth-title">반가워요, 부모님! 👋</h2>
+          <p class="auth-desc">아이와 함께 떠나는 마법 같은 동화 세상에 오신 것을 환영합니다.</p>
+        </div>
+
+        <!-- Social Quick Logins -->
+        <div class="social-login-group">
+          <button class="btn-social btn-kakao" id="btnKakaoLogin" type="button">
+            <span class="social-icon">💬</span>
+            <span class="social-text">카카오로 1초 시작하기</span>
+          </button>
+          <button class="btn-social btn-naver" id="btnNaverLogin" type="button">
+            <span class="social-icon">🟢</span>
+            <span class="social-text">네이버 아이디로 로그인</span>
+          </button>
+          <button class="btn-social btn-google" id="btnGoogleLogin" type="button">
+            <span class="social-icon">🌐</span>
+            <span class="social-text">Google 계정으로 시작</span>
+          </button>
+        </div>
+
+        <div class="auth-divider">
+          <span>또는 부모님 닉네임으로 바로 입장</span>
+        </div>
+
+        <!-- Direct Parent Nickname Login Form -->
+        <form class="auth-direct-form" id="formDirectLogin">
+          <div class="form-group">
+            <label class="form-label" for="inputParentNickname">
+              <span>👤</span> 부모님 호칭 / 닉네임
+            </label>
+            <input type="text" id="inputParentNickname" class="input-text" placeholder="예: 민우 엄마, 이건우 대표님" value="이건우 대표님">
+          </div>
+          <button class="btn-primary-action btn-auth-start" id="btnStartWithNickname" type="submit">
+            <span>✨ 동화 코디룸 입장하기</span>
+            <span>➔</span>
+          </button>
+        </form>
+
+        <div class="guest-mode-wrapper">
+          <button class="btn-guest-entry" id="btnGuestLogin" type="button">
+            <span>🎈 로그인 없이 게스트로 둘러보기</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- [View 1] Parent Onboarding & Jouju-Style Dress-up Studio -->
-    <section class="view-section active" id="viewOnboarding">
+    <section class="view-section" id="viewOnboarding">
       <div class="onboarding-card">
         <div class="onboarding-title-group">
           <span class="onboarding-badge">✨ 세상에 단 하나뿐인 맞춤 동화 & 캐릭터 코디</span>

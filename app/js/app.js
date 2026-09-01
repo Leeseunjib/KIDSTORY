@@ -45,7 +45,10 @@ class KidStoryApp {
     this.skipVoiceFinalize = false;
     this.pendingVoiceTopic = null;
 
+    this.currentUser = JSON.parse(localStorage.getItem('kidstory_user') || 'null');
+
     this.initDOM();
+    this.initAuthAndSplash();
     this.bindEvents();
     this.initSparkleSpawner();
     this.renderFullBodyAvatar();
@@ -65,11 +68,17 @@ class KidStoryApp {
 
   initDOM() {
     // Views
+    this.viewSplash = document.getElementById('viewSplash');
+    this.viewAuth = document.getElementById('viewAuth');
     this.viewOnboarding = document.getElementById('viewOnboarding');
     this.viewStorybook = document.getElementById('viewStorybook');
     this.viewLibrary = document.getElementById('viewLibrary');
     this.modalPOD = document.getElementById('modalPOD');
     this.modalParentGate = document.getElementById('modalParentGate');
+    this.appHeader = document.getElementById('appHeader');
+    this.userProfileBadge = document.getElementById('userProfileBadge');
+    this.headerUserName = document.getElementById('headerUserName');
+    this.userAvatarEmoji = document.getElementById('userAvatarEmoji');
 
     // Onboarding Inputs
     this.inputChildName = document.getElementById('inputChildName');
@@ -96,6 +105,102 @@ class KidStoryApp {
     // POD Elements
     this.podBookTitle = document.getElementById('podBookTitle');
     this.podChildName = document.getElementById('podChildName');
+  }
+
+  // =========================================================================
+  // 🌟 [View 0-A & 0-B] 스플래시 인트로 & 부모 로그인 시스템
+  // =========================================================================
+  initAuthAndSplash() {
+    const btnSplashSkip = document.getElementById('btnSplashSkip');
+    if (btnSplashSkip) {
+      btnSplashSkip.addEventListener('click', () => this.dismissSplash());
+    }
+
+    if (this.viewSplash) {
+      this.viewSplash.addEventListener('click', (e) => {
+        if (e.target.id !== 'btnSplashSkip') {
+          this.dismissSplash();
+        }
+      });
+    }
+
+    // 1.8초 후 스플래시 화면 자동 전환
+    setTimeout(() => {
+      if (this.viewSplash && this.viewSplash.classList.contains('active')) {
+        this.dismissSplash();
+      }
+    }, 1800);
+
+    this.bindAuthEvents();
+  }
+
+  dismissSplash() {
+    if (!this.viewSplash || !this.viewSplash.classList.contains('active')) return;
+    this.viewSplash.classList.remove('active');
+    if (window.audioEngine) window.audioEngine.playSparkle();
+
+    if (this.currentUser) {
+      this.applyLoggedInUser(this.currentUser);
+    } else {
+      if (this.viewAuth) this.viewAuth.classList.add('active');
+    }
+  }
+
+  bindAuthEvents() {
+    const handleLogin = (name, provider, emoji = '👤') => {
+      const user = { name, provider, emoji, loginAt: new Date().toISOString() };
+      this.currentUser = user;
+      localStorage.setItem('kidstory_user', JSON.stringify(user));
+      if (window.audioEngine) window.audioEngine.playPageFlip();
+      this.applyLoggedInUser(user);
+    };
+
+    const btnKakao = document.getElementById('btnKakaoLogin');
+    if (btnKakao) btnKakao.addEventListener('click', () => handleLogin('카카오 부모회원', 'kakao', '🟡'));
+
+    const btnNaver = document.getElementById('btnNaverLogin');
+    if (btnNaver) btnNaver.addEventListener('click', () => handleLogin('네이버 부모회원', 'naver', '🟢'));
+
+    const btnGoogle = document.getElementById('btnGoogleLogin');
+    if (btnGoogle) btnGoogle.addEventListener('click', () => handleLogin('Google 부모회원', 'google', '🌐'));
+
+    const btnGuest = document.getElementById('btnGuestLogin');
+    if (btnGuest) btnGuest.addEventListener('click', () => handleLogin('게스트 부모님', 'guest', '🎈'));
+
+    const formDirect = document.getElementById('formDirectLogin');
+    if (formDirect) {
+      formDirect.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nickname = (document.getElementById('inputParentNickname')?.value || '').trim() || '이건우 대표님';
+        handleLogin(nickname, 'direct', '👑');
+      });
+    }
+
+    const btnLogout = document.getElementById('btnHeaderLogout');
+    if (btnLogout) {
+      btnLogout.addEventListener('click', () => {
+        localStorage.removeItem('kidstory_user');
+        this.currentUser = null;
+        if (this.appHeader) this.appHeader.style.display = 'none';
+        if (this.userProfileBadge) this.userProfileBadge.style.display = 'none';
+        if (this.viewOnboarding) this.viewOnboarding.classList.remove('active');
+        if (this.viewStorybook) this.viewStorybook.classList.remove('active');
+        if (this.viewLibrary) this.viewLibrary.classList.remove('active');
+        if (this.viewAuth) this.viewAuth.classList.add('active');
+        if (window.audioEngine) window.audioEngine.playPageFlip();
+      });
+    }
+  }
+
+  applyLoggedInUser(user) {
+    if (this.viewAuth) this.viewAuth.classList.remove('active');
+    if (this.viewOnboarding) this.viewOnboarding.classList.add('active');
+    if (this.appHeader) this.appHeader.style.display = 'flex';
+    if (this.userProfileBadge) {
+      this.userProfileBadge.style.display = 'flex';
+      if (this.headerUserName) this.headerUserName.innerText = user.name;
+      if (this.userAvatarEmoji) this.userAvatarEmoji.innerText = user.emoji || '👤';
+    }
   }
 
   bindEvents() {
