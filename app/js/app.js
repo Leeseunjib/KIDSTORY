@@ -509,13 +509,35 @@ class KidStoryApp {
         if (input) this.onAuthorImagePicked(input);
       });
       authorPagesList.addEventListener('click', (e) => {
+        const card = e.target.closest('.author-page-card');
+        if (!card) return;
+
+        // 1. AI 그림 생성 버튼 클릭
+        const aiGenBtn = e.target.closest('.btn-ai-gen-image') || e.target.closest('.btn-regen-ai');
+        if (aiGenBtn) {
+          this.generatePageAiImage(card);
+          return;
+        }
+
+        // 2. 그림 삭제 버튼 클릭
+        const delImgBtn = e.target.closest('.btn-del-image');
+        if (delImgBtn) {
+          const wrapper = card.querySelector('.author-image-preview-wrapper');
+          const preview = card.querySelector('.author-page-preview');
+          if (preview) preview.src = '';
+          if (wrapper) wrapper.style.display = 'none';
+          if (window.audioEngine) window.audioEngine.playPageFlip();
+          return;
+        }
+
+        // 3. 페이지 카드 삭제
         const removeBtn = e.target.closest('.btn-remove-author-page');
-        if (!removeBtn) return;
-        const card = removeBtn.closest('.author-page-card');
-        const list = document.getElementById('authorPagesList');
-        if (card && list && list.querySelectorAll('.author-page-card').length > 1) {
-          card.remove();
-          this.renumberAuthorPages();
+        if (removeBtn) {
+          const list = document.getElementById('authorPagesList');
+          if (list && list.querySelectorAll('.author-page-card').length > 1) {
+            card.remove();
+            this.renumberAuthorPages();
+          }
         }
       });
     }
@@ -1120,13 +1142,30 @@ class KidStoryApp {
         <strong></strong>
         <button class="btn-remove-author-page" type="button">삭제</button>
       </div>
-      <input type="text" class="input-text author-page-title" maxlength="40" placeholder="이 쪽 제목 (선택)">
-      <textarea class="input-text author-page-narration" maxlength="800" placeholder="이 쪽에서 읽어 줄 문장을 적어 주세요."></textarea>
-      <label class="btn-upload-photo">
-        <span>🖼️ 이 쪽 그림 넣기</span>
-        <input type="file" class="author-page-image" accept="image/*" hidden>
-      </label>
-      <img class="author-page-preview" alt="이 쪽 그림 미리보기" hidden>
+      <textarea class="input-text author-page-narration" maxlength="800" placeholder="이 쪽에서 읽어 줄 이야기 문장을 적어 주세요 (예: ${this.childProfile.name || '아이'}가 숲속 요정과 함께 반짝이는 칫솔로 이를 닦아요)."></textarea>
+      
+      <div class="author-image-actions">
+        <button class="btn-ai-gen-image" type="button" title="적은 스토리를 바탕으로 AI 그림을 자동 생성합니다">
+          <span>🎨 AI 그림 생성하기</span>
+        </button>
+        <label class="btn-upload-author-image" title="내가 가진 그림/사진을 직접 업로드합니다">
+          <span>📁 내 사진 올리기</span>
+          <input type="file" class="author-page-image" accept="image/*" hidden>
+        </label>
+      </div>
+
+      <div class="author-image-generating-bar" style="display: none;">
+        <span class="spin-sparkle">✨</span>
+        <span>스토리를 분석하여 동화 그림을 그리는 중...</span>
+      </div>
+
+      <div class="author-image-preview-wrapper" style="display: none;">
+        <img class="author-page-preview" alt="이 쪽 그림 미리보기">
+        <div class="author-image-overlay-controls">
+          <button class="btn-image-action-small btn-regen-ai" type="button">🔄 다시 생성</button>
+          <button class="btn-image-action-small btn-del-image" type="button">🗑️ 삭제</button>
+        </div>
+      </div>
     `;
     list.appendChild(card);
     this.renumberAuthorPages();
@@ -1135,13 +1174,99 @@ class KidStoryApp {
   renumberAuthorPages() {
     document.querySelectorAll('#authorPagesList .author-page-card').forEach((card, i) => {
       const label = card.querySelector('.author-page-head strong');
-      if (label) label.innerText = `${i + 1}쪽`;
+      if (label) label.innerText = `📖 ${i + 1}쪽 이야기`;
     });
+  }
+
+  // 🎨 작성된 문장을 인식하여 나노바나나 / 무료 오픈 AI 모델로 동화 삽화 자동 생성
+  async generatePageAiImage(card) {
+    const narrationInput = card.querySelector('.author-page-narration');
+    const narration = (narrationInput ? narrationInput.value : '').trim();
+    
+    if (!narration) {
+      alert(`이 쪽에서 일어나는 이야기 문장을 먼저 적어주세요!\n(예: ${this.childProfile.name || '민우'}가 숲속 요정과 함께 반짝이는 칫솔로 이를 닦아요)`);
+      if (narrationInput) narrationInput.focus();
+      return;
+    }
+
+    const genBtn = card.querySelector('.btn-ai-gen-image');
+    const genBar = card.querySelector('.author-image-generating-bar');
+    const wrapper = card.querySelector('.author-image-preview-wrapper');
+    const preview = card.querySelector('.author-page-preview');
+
+    if (genBtn) genBtn.disabled = true;
+    if (genBar) genBar.style.display = 'flex';
+    if (wrapper) wrapper.style.display = 'none';
+
+    try {
+      const childName = this.childProfile.name || '아이';
+      const genderDesc = this.childProfile.gender === 'girl' ? 'little cute girl' : 'little cute boy';
+      const outfitDesc = this.childProfile.outfit === 'princess' 
+        ? 'pink tiered frill magical princess dress with gold tiara and sparkling star wand' 
+        : (this.childProfile.outfit === 'prince' 
+            ? 'regal prince royal navy uniform with cape' 
+            : 'hero cape with sparkling magical toothbrush');
+
+      // Teenieping & Princess Romi 3D Anime Pastel prompt recipe
+      const storyKeyword = narration.replace(/[\n\r]+/g, ' ').slice(0, 140);
+      const prompt = `masterpiece, best quality, ultra-detailed 3d anime storybook illustration, catch teenieping style, princess romi aesthetic, cute ${genderDesc} with sparkling jewel eyes named ${childName}, wearing ${outfitDesc}, cute fairy companion floating nearby, fairy tale book scene: ${storyKeyword}, magical pastel lighting, sparkling stars, vibrant cheerful atmosphere, 8k resolution`;
+
+      const seed = Math.floor(Math.random() * 899999) + 100000;
+      const encodedPrompt = encodeURIComponent(prompt);
+      const pollUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=600&seed=${seed}&nologo=true&model=flux`;
+
+      // Preload image
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+
+      const imagePromise = new Promise((resolve, reject) => {
+        img.onload = () => resolve(pollUrl);
+        img.onerror = () => reject(new Error('네트워크 AI 이미지 로드 실패'));
+        // 12초 타임아웃
+        setTimeout(() => resolve(pollUrl), 12000);
+      });
+
+      img.src = pollUrl;
+      await imagePromise;
+
+      preview.src = pollUrl;
+      if (wrapper) wrapper.style.display = 'block';
+      if (window.audioEngine) window.audioEngine.playSparkle();
+    } catch (err) {
+      console.warn('AI 이미지 생성 Fallback 적용:', err.message);
+      // Fallback: 풍부한 파스텔 그라디언트 씬 생성
+      const canvas = document.createElement('canvas');
+      canvas.width = 800;
+      canvas.height = 600;
+      const ctx = canvas.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 800, 600);
+      grad.addColorStop(0, '#FFE8D6');
+      grad.addColorStop(0.5, '#FFCAD4');
+      grad.addColorStop(1, '#B5E2FA');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 800, 600);
+
+      ctx.fillStyle = '#FF6B6B';
+      ctx.font = 'bold 32px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`✨ ${this.childProfile.name || '아이'}의 마법 동화`, 400, 260);
+
+      ctx.fillStyle = '#4A5568';
+      ctx.font = '22px sans-serif';
+      ctx.fillText(narration.slice(0, 30) + '...', 400, 320);
+
+      preview.src = canvas.toDataURL('image/png');
+      if (wrapper) wrapper.style.display = 'block';
+    } finally {
+      if (genBtn) genBtn.disabled = false;
+      if (genBar) genBar.style.display = 'none';
+    }
   }
 
   onAuthorImagePicked(input) {
     const file = input.files && input.files[0];
     const card = input.closest('.author-page-card');
+    const wrapper = card ? card.querySelector('.author-image-preview-wrapper') : null;
     const preview = card ? card.querySelector('.author-page-preview') : null;
     if (!file || !preview) return;
     if (file.size > 4 * 1024 * 1024) {
@@ -1152,7 +1277,8 @@ class KidStoryApp {
     const reader = new FileReader();
     reader.onload = (evt) => {
       preview.src = evt.target.result;
-      preview.hidden = false;
+      if (wrapper) wrapper.style.display = 'block';
+      if (window.audioEngine) window.audioEngine.playSparkle();
     };
     reader.readAsDataURL(file);
   }
@@ -1160,11 +1286,12 @@ class KidStoryApp {
   collectAuthorStory() {
     const titleEl = document.getElementById('inputAuthorTitle');
     const cards = document.querySelectorAll('#authorPagesList .author-page-card');
-    const pages = Array.from(cards).map((card) => {
+    const pages = Array.from(cards).map((card, i) => {
       const preview = card.querySelector('.author-page-preview');
-      const hasImage = preview && !preview.hidden && preview.src && preview.src.indexOf('data:') === 0;
+      const wrapper = card.querySelector('.author-image-preview-wrapper');
+      const hasImage = preview && wrapper && wrapper.style.display !== 'none' && preview.src && preview.src.length > 10;
       return {
-        title: (card.querySelector('.author-page-title') || {}).value || '',
+        title: `${i + 1}쪽`,
         narration: (card.querySelector('.author-page-narration') || {}).value || '',
         imageUrl: hasImage ? preview.src : null
       };

@@ -365,23 +365,29 @@ body {
 .author-pages-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 #sectionAuthorStory {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .author-page-card {
-  border: 2px solid var(--color-border);
-  border-radius: 16px;
-  padding: 12px;
+  border: 1.5px solid #F1ECE1;
+  border-radius: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   background: #FFFDF9;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.2s ease;
+}
+
+.author-page-card:hover {
+  border-color: #FFD8E4;
 }
 
 .author-page-head {
@@ -392,39 +398,176 @@ body {
 
 .author-page-head strong {
   font-size: 14px;
+  font-weight: 800;
+  color: var(--color-primary-coral);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .btn-remove-author-page {
   border: none;
   background: transparent;
-  color: var(--color-text-sub);
-  font-weight: 700;
+  color: #A4B0BE;
+  font-weight: 800;
+  font-size: 12px;
   cursor: pointer;
   padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-remove-author-page:hover {
+  background: #FFF0F0;
+  color: #E84168;
 }
 
 .author-page-narration {
-  min-height: 84px;
+  min-height: 90px;
   resize: vertical;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 12px 14px;
+}
+
+.author-image-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-ai-gen-image {
+  flex: 1.2;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.25);
+  transition: all 0.25s ease;
+}
+
+.btn-ai-gen-image:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 107, 107, 0.35);
+}
+
+.btn-ai-gen-image:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-upload-author-image {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #FFF0F5;
+  color: #E84168;
+  border: 1.5px solid #FFD8E4;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-upload-author-image:hover {
+  background: #FFE4EE;
+}
+
+.author-image-preview-wrapper {
+  position: relative;
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #F8F4EC;
+  border: 1.5px solid #EFE4DC;
 }
 
 .author-page-preview {
   width: 100%;
-  max-height: 140px;
-  object-fit: contain;
-  border-radius: 12px;
-  background: #F8F4EC;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.author-image-overlay-controls {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.btn-image-action-small {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  color: white;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-image-action-small:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.author-image-generating-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  background: linear-gradient(135deg, #FFF0F5, #FFE9D6);
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #E84168;
+}
+
+.spin-sparkle {
+  display: inline-block;
+  animation: spinSparkle 1.2s infinite linear;
+}
+
+@keyframes spinSparkle {
+  0% { transform: rotate(0deg) scale(0.9); }
+  50% { transform: rotate(180deg) scale(1.15); }
+  100% { transform: rotate(360deg) scale(0.9); }
 }
 
 .btn-add-author-page {
   width: 100%;
-  padding: 12px;
-  border: 2px dashed var(--color-border);
+  padding: 14px;
+  border: 2px dashed #FFD8E4;
   border-radius: 16px;
-  background: #FAFAFA;
-  font-weight: 700;
-  color: var(--color-text-sub);
+  background: #FFFDF9;
+  font-weight: 800;
+  color: var(--color-primary-coral);
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add-author-page:hover {
+  background: #FFF0F5;
+  border-color: #FF6B6B;
 }
 
 .page-user-illustration {
