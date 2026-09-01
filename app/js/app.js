@@ -1775,19 +1775,31 @@ class KidStoryApp {
   }
 
   replaceChildName(text) {
+    if (!text) return '';
     const name = this.childProfile.name;
-    const hasBatchim = (name.charCodeAt(name.length - 1) - 0xAC00) % 28 > 0;
-    const eunNeun = hasBatchim ? '은' : '는';
-    const iGa = hasBatchim ? '이' : '가';
-    const eulReul = hasBatchim ? '을' : '를';
-    const gwaWa = hasBatchim ? '과' : '와';
+    let res = text.replace(/\{\{CHILD_NAME\}\}/g, name);
 
-    return text
-      .replace(/{{CHILD_NAME}}\(은\)는/g, `${name}${eunNeun}`)
-      .replace(/{{CHILD_NAME}}\(이\)가/g, `${name}${iGa}`)
-      .replace(/{{CHILD_NAME}}\(을\)를/g, `${name}${eulReul}`)
-      .replace(/{{CHILD_NAME}}\(과\)와/g, `${name}${gwaWa}`)
-      .replace(/{{CHILD_NAME}}/g, name);
+    // Resolve Korean postpositions correctly based on the preceding character's batchim
+    res = res.replace(/([가-힣a-zA-Z0-9])(\(은\)는|은\(는\)|\(이\)가|이\(가\)|\(을\)를|을\(를\)|\(과\)와|과\(와\))/g, (match, prevChar, josa) => {
+      let hasBatchim = false;
+      const code = prevChar.charCodeAt(0);
+      if (code >= 0xAC00 && code <= 0xD7A3) {
+        hasBatchim = (code - 0xAC00) % 28 > 0;
+      } else {
+        // Simple fallback for non-Korean chars: assume no batchim (or could be improved later)
+        hasBatchim = false;
+      }
+      
+      let resolved = '';
+      if (josa.includes('은') && josa.includes('는')) resolved = hasBatchim ? '은' : '는';
+      else if (josa.includes('이') && josa.includes('가')) resolved = hasBatchim ? '이' : '가';
+      else if (josa.includes('을') && josa.includes('를')) resolved = hasBatchim ? '을' : '를';
+      else if (josa.includes('과') && josa.includes('와')) resolved = hasBatchim ? '과' : '와';
+      
+      return prevChar + resolved;
+    });
+
+    return res;
   }
 
   // =========================================================================
