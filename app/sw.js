@@ -4,7 +4,7 @@
  * - 오프라인 상태에서도 동화책과 터치 미니게임 100% 정상 작동
  */
 
-const CACHE_NAME = 'kidstory-cache-v4-hosting-2026';
+const CACHE_NAME = 'kidstory-cache-v6-ai-gen-2026';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
