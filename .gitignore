@@ -1,0 +1,8 @@
+# 이 기기에 쌓인 이야기·음성. 저장소에 올리지 않는다.
+device_store/
+app/device_store/
+.firebase/
+node_modules/
+.env
+.env.*
+.DS_Store

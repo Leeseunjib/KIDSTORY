@@ -1,0 +1,20 @@
+{
+  "name": "KidStory — 내 아이 맞춤형 인터랙티브 동화",
+  "short_name": "KidStory",
+  "description": "아이 사진 1장으로 동화 속 주인공이 되고, 실제 칫솔질 AI 카메라 게임과 부모 목소리로 즐기는 맞춤형 인터랙티브 동화 플랫폼",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FFFDF9",
+  "theme_color": "#FF6B6B",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23FF6B6B'/><text x='50%' y='62%' font-size='56' text-anchor='middle' dominant-baseline='middle'>📚</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "kids", "books", "entertainment"],
+  "lang": "ko"
+}

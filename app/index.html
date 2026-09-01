@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>KidStory — 세상에 하나뿐인 내 아이 맞춤형 인터랙티브 동화</title>
+  <meta name="description" content="아이 사진 1장으로 동화 속 주인공이 되고, 부모 목소리로 읽어주며, 터치 게임으로 올바른 생활 습관을 기르는 인터랙티브 동화 플랫폼">
+  <meta name="theme-color" content="#FF6B6B">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW register fail:', err));
+      });
+    }
+  </script>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="app-header">
+    <div class="brand-logo" id="brandLogo">
+      <div class="logo-icon">📚</div>
+      <div class="brand-name">Kid<span>Story</span></div>
+    </div>
+
+    <div class="header-controls">
+      <button class="btn-nav-shelf" id="btnHeaderLibrary" title="동화 서재로 이동">
+        <span>📚</span> 동화 서재
+      </button>
+      <button class="btn-icon" id="btnAudioToggle" title="배경음 및 효과음 켜기/끄기">🔊</button>
+      <button class="btn-parent-gate" id="btnParentGate">
+        <span>🔒</span> 부모 설정
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Views -->
+  <main class="main-container">
+
+    <!-- [View 1] Parent Onboarding & Jouju-Style Dress-up Studio -->
+    <section class="view-section active" id="viewOnboarding">
+      <div class="onboarding-card">
+        <div class="onboarding-title-group">
+          <span class="onboarding-badge">✨ 세상에 단 하나뿐인 맞춤 동화 & 캐릭터 코디</span>
+          <h2 class="onboarding-title">주인공 아이와 함께 시작하기</h2>
+          <p class="onboarding-desc">원고와 그림을 넣으면 읽어 주고, AI는 매번 다른 이야기를 새로 씁니다. 아이 사진과 옷은 그대로 코디할 수 있어요.</p>
+        </div>
+
+        <!-- Creation Mode Tabs -->
+        <div class="mode-tab-group">
+          <button class="mode-tab active" id="tabDirectMode" type="button">✍️ 직접 선택 & 코디</button>
+          <button class="mode-tab" id="tabVoiceMode" type="button">🎙️ 부모 음성으로 말하기</button>
+        </div>
+
+        <!-- [Mode A] Direct Selection Mode -->
+        <div id="sectionDirectMode">
+          <!-- 1. Child Name Input -->
+          <div class="form-group">
+            <label class="form-label" for="inputChildName">
+              <span>🧒</span> 주인공 아이 이름
+            </label>
+            <input type="text" id="inputChildName" class="input-text" value="민우" maxlength="8" placeholder="아이 이름을 입력하세요 (예: 민우, 서아, 시안)">
+          </div>
+
+          <!-- 2. Gender Selection -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>🎨</span> 성별 선택
+            </label>
+            <div class="radio-pill-group">
+              <div class="radio-pill active" data-type="gender" data-val="boy">👦 씩씩한 왕자님</div>
+              <div class="radio-pill" data-type="gender" data-val="girl">👧 사랑스러운 공주님</div>
+            </div>
+          </div>
+
+          <!-- 3. Age Selection -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>🎂</span> 아이 나이
+            </label>
+            <div class="radio-pill-group">
+              <div class="radio-pill" data-type="age" data-val="3">3세</div>
+              <div class="radio-pill active" data-type="age" data-val="4">4세</div>
+              <div class="radio-pill" data-type="age" data-val="5">5세</div>
+              <div class="radio-pill" data-type="age" data-val="6">6세</div>
+              <div class="radio-pill" data-type="age" data-val="7">7세</div>
+            </div>
+          </div>
+
+          <!-- 4. Story source: 원고 낭독 vs AI 생성 -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>📚</span> 동화는 어떻게 만들까요?
+            </label>
+            <div class="radio-pill-group">
+              <div class="radio-pill" data-type="storySource" data-val="author">📖 내가 쓰고 그림 넣기</div>
+              <div class="radio-pill active" data-type="storySource" data-val="ai">✨ AI가 매번 새로 쓰기</div>
+            </div>
+            <p class="story-source-hint">준비된 양치·편식·잠 동화는 위쪽 <strong>동화 서재</strong>에서 그대로 읽을 수 있어요. 새로 만든 이야기·그림·소리는 이 기기에 쌓입니다.</p>
+          </div>
+
+          <div id="sectionAuthorStory" style="display: none;">
+            <div class="form-group">
+              <label class="form-label" for="inputAuthorTitle">동화 제목</label>
+              <input type="text" id="inputAuthorTitle" class="input-text" maxlength="40" placeholder="예: 민우의 치카치카 모험">
+            </div>
+            <p class="story-source-hint">쪽마다 읽어 줄 문장과 그림을 넣으면, 시작 버튼에서 요정이 그대로 읽어 줍니다.</p>
+            <div id="authorPagesList" class="author-pages-list"></div>
+            <button class="btn-add-author-page" id="btnAddAuthorPage" type="button">＋ 페이지 추가</button>
+          </div>
+
+          <div id="sectionAiStory">
+            <div class="form-group">
+              <label class="form-label" for="inputCustomTopic">
+                <span>⭐</span> 오늘 이야기 주제
+              </label>
+              <p class="story-source-hint" id="aiStoryHint">1차는 Gemini, 없으면 이 컴퓨터에 있는 Gemma 4가 씁니다. 만든 이야기는 클라우드가 아니라 이 기기에 남습니다.</p>
+              <span class="ai-status-badge" id="aiStoryStatusBadge">생성기 확인 중</span>
+              <input type="text" id="inputCustomTopic" class="input-text" placeholder="원하는 고민/습관 (예: 장난감 정리, 손 씻기)" value="스스로 장난감 정리하기">
+              <div class="radio-pill-group" style="margin-top: 4px;">
+                <div class="radio-pill" data-type="aiTopic" data-val="치카치카 깨끗이 양치질하기">🦷 양치</div>
+                <div class="radio-pill" data-type="aiTopic" data-val="채소와 밥을 골고루 맛있게 먹기">🥦 편식</div>
+                <div class="radio-pill" data-type="aiTopic" data-val="씩씩하게 포근히 잠자기">🌙 잠</div>
+                <div class="radio-pill active" data-type="aiTopic" data-val="스스로 장난감 정리하기">🧸 정리</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- [Mode B] Voice-to-Story Mode -->
+        <div id="sectionVoiceMode" style="display: none;">
+          <div class="voice-box">
+            <div class="voice-header">
+              <span class="voice-badge">🎙️ 내 목소리로 고민 말하기</span>
+              <p class="voice-desc">빨간 마이크를 누른 뒤 허용을 선택하고, 아이에 대해 말씀해 주세요. 끝나면 버튼을 한 번 더 눌러 멈춥니다. 파장은 실제로 말할 때만 움직입니다.</p>
+            </div>
+
+            <div class="mic-trigger-wrapper">
+              <div class="recording-ripple" id="recordingRipple"></div>
+              <button class="btn-mic-record" id="btnMicRecord" type="button">
+                <span class="mic-icon" id="micIcon">🎙️</span>
+                <span class="mic-label" id="micStatusText">눌러서 내 목소리 녹음하기</span>
+              </button>
+              <div class="voice-live-timer" id="voiceLiveTimer" style="display:none;">
+                <span class="rec-dot"></span> <span id="voiceTimerSeconds">00:00</span> 녹음 중 · 끝나면 다시 누르세요
+              </div>
+              <canvas id="voiceWaveCanvas" width="300" height="44"></canvas>
+              <p class="voice-mic-hint" id="voiceMicHint">말할 때만 막대가 커집니다. 조용하면 거의 멈춰 있어요.</p>
+              <p class="voice-live-transcript" id="voiceLiveTranscript"></p>
+            </div>
+
+            <div class="voice-verification-card" id="voiceVerificationCard" style="display:none;">
+              <div class="verif-header">
+                <span class="verif-badge" id="verifBadgeText">내 목소리가 저장됐어요</span>
+                <span class="verif-quality" id="verifQuality">실제 마이크 녹음</span>
+              </div>
+
+              <div class="verif-player-bar">
+                <button class="btn-play-voice-preview" id="btnPlayRecordedVoice" type="button">
+                  <span id="voicePlayIcon">▶️</span> <span>내 목소리 들어보기</span>
+                </button>
+                <span class="voice-duration-tag" id="voiceDurationTag">00:00</span>
+              </div>
+
+              <div class="verif-extracted-info">
+                <div class="verif-item">
+                  <span class="verif-label">주인공 아이</span>
+                  <strong id="verifChildName">민우</strong>
+                </div>
+                <div class="verif-item">
+                  <span class="verif-label">알아들은 고민</span>
+                  <strong id="verifTopic">아직 글로 바꾸기 전</strong>
+                </div>
+                <div class="verif-item">
+                  <span class="verif-label">저장된 음성</span>
+                  <strong id="verifVoiceTone">실제 녹음 · 재생으로 확인</strong>
+                </div>
+              </div>
+
+              <div class="transcript-quote" id="voiceTranscriptText"></div>
+
+              <div class="verif-actions">
+                <button class="btn-verif-rerecord" id="btnRerecordVoice" type="button">다시 녹음하기</button>
+                <button class="btn-verif-start" id="btnStartWithVoice" type="button">이 목소리로 동화 시작하기</button>
+              </div>
+            </div>
+
+            <div class="voice-chips-group" id="voiceChipsContainer">
+              <span class="chip-title">이렇게 말해 보세요. 아래는 예시일 뿐, 눌러도 목소리는 들어가지 않습니다.</span>
+              <div class="voice-chip" data-text="우리 시안이가 요즘 친구들과 장난감 양보를 안 하고 떼써요">예시. "시안이가 장난감 양보를 안 해요"</div>
+              <div class="voice-chip" data-text="우리 지아가 요즘 밤에 불 끄면 무서워하고 안 자려고 해요">예시. "지아가 밤에 불 끄면 무서워해요"</div>
+              <div class="voice-chip" data-text="민우가 밥 먹을 때 시금치랑 당근을 자꾸 뱉어내요">예시. "민우가 시금치랑 당근을 뱉어요"</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Catch! Teenieping & Romi-Style Full-Body Avatar & Dress-Up Studio -->
+        <div class="dressup-studio-card">
+          <div class="studio-header">
+            <h3>💖 캐치! 티니핑 & 로미 스타일 캐릭터 스튜디오</h3>
+            <span class="studio-subtitle">아이 사진을 올리거나 사랑스러운 로미 공주·별빛 용사 옷으로 코디해 보세요!</span>
+          </div>
+
+          <div class="dressup-workbench">
+            <!-- Left: Full Body Character Mannequin Preview -->
+            <div class="mannequin-stage">
+              <div class="fullbody-avatar-wrapper" id="fullbodyAvatarCanvas">
+                <!-- SVG Full Body Character dynamically rendered -->
+              </div>
+              <div class="mannequin-name-tag" id="avatarNameTag">민우 용사님</div>
+
+              <!-- Photo Upload Button -->
+              <label class="btn-upload-photo" for="inputFacePhoto">
+                <span>📷 내 아이 얼굴 사진 올리기</span>
+                <input type="file" id="inputFacePhoto" accept="image/*" style="display:none;">
+              </label>
+              <button class="btn-remove-photo" id="btnRemovePhoto" style="display:none;">❌ 사진 지우고 일러스트로</button>
+            </div>
+
+            <!-- Right: Wardrobe Closet Category Controls -->
+            <div class="closet-controls">
+              <!-- Closet Category Tabs -->
+              <div class="closet-tabs">
+                <button class="closet-tab active" data-tab="outfit">👗 의상 코디</button>
+                <button class="closet-tab" data-tab="hat">👑 왕관/모자</button>
+                <button class="closet-tab" data-tab="prop">🪄 손 소품</button>
+              </div>
+
+              <!-- Tab Content: Outfits -->
+              <div class="closet-tab-content active" id="closetOutfits">
+                <div class="wardrobe-grid">
+                  <div class="wardrobe-item active" data-type="outfit" data-val="hero">
+                    <span class="item-icon">🛡️</span>
+                    <span class="item-label">용사 망토</span>
+                  </div>
+                  <div class="wardrobe-item" data-type="outfit" data-val="prince">
+                    <span class="item-icon">🤴</span>
+                    <span class="item-label">왕자님 예복</span>
+                  </div>
+                  <div class="wardrobe-item" data-type="outfit" data-val="princess">
+                    <span class="item-icon">👗</span>
+                    <span class="item-label">공주 드레스</span>
+                  </div>
+                  <div class="wardrobe-item" data-type="outfit" data-val="pajama">
+                    <span class="item-icon">🧸</span>
+                    <span class="item-label">곰돌이 잠옷</span>
+                  </div>
+                  <div class="wardrobe-item" data-type="outfit" data-val="explorer">
+                    <span class="item-icon">🧭</span>
+                    <span class="item-label">꼬마 탐험가</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab Content: Hats/Crowns -->
+              <div class="closet-tab-content" id="closetHats" style="display:none;">
+                <div class="wardrobe-grid">
+                  <div class="wardrobe-item active" data-type="hat" data-val="crown">
+                    <span class="item-icon">👑</span>
+                    <span class="item-label">황금 왕관</span>
+                  </div>
+                  <div class="wardrobe-item" data-type="hat" data-val="ribbon">
+                    <span class="item-icon">🎀</span>
+                    <span class="item-label">핑크 리본</span>
+                  </div>
+                  <div class="wardrobe-item" data-type="hat" data-val="wizard">
+                    <span class="item-icon">🎩</span>
+                    <span class="item-label">마법 모자</span>
+                  </div>
+                  <div class="wardrobe-item" data-type="hat" data-val="bunny">
+                    <span class="item-icon">🐰</span>
+                    <span class="item-label">토끼 머리띠</span>
+                  </div>
+                  <div class="wardrobe-item" data-type="hat" data-val="none">
+                    <span class="item-icon">❌</span>
+                    <span class="item-label">착용 안 함</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab Content: Props -->
+              <div class="closet-tab-content" id="closetProps" style="display:none;">
+                <div class="wardrobe-grid">
+                  <div class="wardrobe-item active" data-type="prop" data-val="toothbrush">
+                    <span class="item-icon">🪥</span>
+                    <span class="item-label">칫솔 검</span>
+                  </div>
+                  <div class="wardrobe-item" data-type="prop" data-val="wand">
+                    <span class="item-icon">🪄</span>
+                    <span class="item-label">별빛 요술봉</span>
+                  </div>
+                  <div class="wardrobe-item" data-type="prop" data-val="bear">
+                    <span class="item-icon">🧸</span>
+                    <span class="item-label">애착 인형</span>
+                  </div>
+                  <div class="wardrobe-item" data-type="prop" data-val="shield">
+                    <span class="item-icon">🛡️</span>
+                    <span class="item-label">황금 방패</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Start Story Button -->
+        <button class="btn-primary-action" id="btnStartStory">
+          <span id="btnStartStoryLabel">✨ 오늘만의 동화 듣기</span>
+          <span>✨</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- [View 2] Interactive 3D Storybook Viewer -->
+    <section class="view-section" id="viewStorybook">
+      <div class="storybook-wrapper">
+        
+        <!-- 3D Book Stage -->
+        <div class="book-stage">
+          <div class="book-card" id="bookCard">
+            
+            <!-- Book Header -->
+            <div class="book-header-bar">
+              <span class="page-indicator-badge" id="pageBadge">1 / 6 쪽</span>
+              <span class="story-theme-badge" id="storyThemeBadge">🦷 양치질 습관</span>
+              <button class="book-voice-badge" id="btnToggleVoiceMode" title="나레이션 음성 모드 변경">
+                <span class="voice-pulse-dot"></span>
+                <span id="bookVoiceModeText">요정 나레이터 모드</span>
+              </button>
+            </div>
+
+            <!-- Scene Graphic Container -->
+            <div class="scene-container" id="sceneContainer">
+              <!-- Dynamically populated SVG scene -->
+            </div>
+
+            <!-- Bottom Narration Bar -->
+            <div class="narration-glass-box">
+              <div class="speaker-col">
+                <button class="btn-tts-speaker" id="btnSpeaker" title="음성 듣기 / 일시정지">🔊</button>
+                <span class="speaker-voice-label" id="speakerVoiceLabel">요정 음성</span>
+              </div>
+              <div class="narration-col">
+                <div class="narration-voice-status-bar">
+                  <span id="narrationVoiceTag">상냥한 동화 요정의 목소리로 읽어주고 있어요</span>
+                </div>
+                <div class="narration-text-content" id="narrationBox">
+                  <!-- Word highlight dynamically inserted -->
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Book Navigation Bar -->
+        <div class="book-nav-bar">
+          <button class="btn-nav prev" id="btnPrev">⬅️ 이전 쪽</button>
+          <button class="btn-nav" id="btnLibraryExit" style="background:#FFF9F3; color:#2D3436; border:2px solid #EFE9E0;">📚 서재로 나가기</button>
+          <button class="btn-nav" id="btnRestartStory" style="display:none; background:#E8F8F5; color:#16A085;">🔄 다시 읽기</button>
+          <button class="btn-nav" id="btnOrderPOD" style="background:#FFF1EE; color:#FF7E67;">🎁 양장본 소장</button>
+          <button class="btn-nav next" id="btnNext">다음 쪽 ➔</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- [View 3] Story Library / Shelf Category View -->
+    <section class="view-section" id="viewLibrary">
+      <div class="library-container">
+        <div class="library-header">
+          <span class="library-badge">📚 KidStory 동화 서재</span>
+          <h2 class="library-title">우리 아이를 위한 동화 컬렉션</h2>
+          <p class="library-desc">이 폰·이 컴퓨터에서 만든 이야기와 소리는 여기에 쌓입니다. 준비된 동화도 함께 볼 수 있어요.</p>
+          <p class="device-vault-bar" id="deviceVaultBar">이 기기 금고를 여는 중</p>
+        </div>
+
+        <!-- Category Filters -->
+        <div class="library-filter-group">
+          <button class="lib-filter active" data-category="all">전체 이야기</button>
+          <button class="lib-filter" data-category="device">📱 이 기기</button>
+          <button class="lib-filter" data-category="teeth">🦷 양치질 습관</button>
+          <button class="lib-filter" data-category="veggie">🥦 편식 개선</button>
+          <button class="lib-filter" data-category="sleep">🌙 수면/마음</button>
+          <button class="lib-filter" data-category="custom">🤖 AI 맞춤 창작</button>
+        </div>
+
+        <!-- Story Book Cards Shelf Grid -->
+        <div class="library-grid" id="libraryGrid">
+          <!-- Populated dynamically by app.js -->
+        </div>
+
+        <button class="btn-primary-action" id="btnCreateNewFromLibrary" style="margin-top: 30px;">
+          <span>✨ 새 캐릭터로 동화 만들기</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- [Modal] Print-On-Demand Hardcover Upsell Modal -->
+  <div class="modal-overlay" id="modalPOD">
+    <div class="modal-card">
+      <button class="btn-close-modal" id="btnClosePOD">✕</button>
+
+      <span class="pod-badge">📦 프리미엄 출판 서비스</span>
+      <h2 style="font-size: 24px; font-weight: 800; color: #2D3436;">세상에 단 한 권뿐인 양장본 그림책</h2>
+      <p style="font-size: 15px; color: #636E72;">
+        우리 아이의 첫 모험을 도톰하고 고급스러운 하드커버 양장본 그림책으로 평생 소장하세요.
+      </p>
+
+      <!-- 3D Book Preview -->
+      <div class="pod-preview-3d">
+        <div style="font-size: 38px; margin-bottom: 6px;">📖</div>
+        <h4 id="podBookTitle" style="font-size: 14px; font-weight: 800; line-height: 1.3;">치카치카 별을 구한 용사</h4>
+        <small id="podChildName" style="font-size: 11px; opacity: 0.9; margin-top: 4px;">주인공: 민우 어린이</small>
+      </div>
+
+      <!-- Dedication Input -->
+      <div class="form-group" style="text-align: left;">
+        <label class="form-label" style="font-size: 14px;">💌 속표지 부모님 축하 메시지</label>
+        <input type="text" class="input-text" style="font-size: 14px; padding: 10px 14px;" value="사랑하는 우리 아이에게, 언제나 씩씩하게 자라렴! - 엄마 아빠가 -">
+      </div>
+
+      <div class="pod-price">
+        ₩39,800 <small>/ 무료 배송 (선택 구매)</small>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 6px;">
+        <button class="btn-nav" id="btnPODCloseToLibrary" style="flex: 1; background: #F1ECE1; color: #2D3436; justify-content: center;">
+          <span>동화 서재로 가기 📚</span>
+        </button>
+        <button class="btn-primary-action" id="btnSubmitPODOrder" style="flex: 1.5; margin: 0; padding: 14px;">
+          <span>양장본 주문하기 📦 (Sandbox)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/audioEngine.js"></script>
+  <script src="js/storyData.js"></script>
+  <script src="js/miniGame.js"></script>
+  <script src="js/mediaPipeEngine.js"></script>
+  <script src="js/firebaseService.js"></script>
+  <script src="js/paypalService.js"></script>
+  <script src="js/localVault.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>

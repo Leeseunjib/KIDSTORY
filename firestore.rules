@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 🧪 KidStory Sandbox Test Rules (2026 Research)
+    // 샌드박스 연구 및 테스트 모드: 기본 읽기 허용 및 익명/테스트 쓰기 지원
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    match /stories/{storyId} {
+      allow read, write: if true;
+    }
+    match /orders/{orderId} {
+      allow read, write: if true;
+    }
+  }
+}
