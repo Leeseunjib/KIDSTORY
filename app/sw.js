@@ -4,7 +4,7 @@
  * - 오프라인 상태에서도 동화책과 터치 미니게임 100% 정상 작동
  */
 
-const CACHE_NAME = 'kidstory-cache-v3-device-vault-2026';
+const CACHE_NAME = 'kidstory-cache-v4-hosting-2026';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -52,16 +52,26 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(fetch(event.request));
     return;
   }
+
+  const isAppFile = event.request.mode === 'navigate'
+    || /\.(html|js|css)$/i.test(url.pathname)
+    || url.pathname.endsWith('/');
+
+  if (isAppFile) {
+    event.respondWith(
+      fetch(event.request).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        return res;
+      }).catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).catch(() => {
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
-      });
+      if (cachedResponse) return cachedResponse;
+      return fetch(event.request);
     })
   );
 });

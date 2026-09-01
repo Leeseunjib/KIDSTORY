@@ -147,8 +147,8 @@ class KidStoryApp {
   }
 
   bindAuthEvents() {
-    const handleLogin = (name, provider, emoji = '👤') => {
-      const user = { name, provider, emoji, loginAt: new Date().toISOString() };
+    const handleLogin = (name, provider, emoji = '👤', email = null) => {
+      const user = { name, provider, emoji, email, loginAt: new Date().toISOString() };
       this.currentUser = user;
       localStorage.setItem('kidstory_user', JSON.stringify(user));
       if (window.audioEngine) window.audioEngine.playPageFlip();
@@ -161,8 +161,37 @@ class KidStoryApp {
     const btnNaver = document.getElementById('btnNaverLogin');
     if (btnNaver) btnNaver.addEventListener('click', () => handleLogin('네이버 부모회원', 'naver', '🟢'));
 
+    // 🌐 실제 Firebase Google 로그인 연동
     const btnGoogle = document.getElementById('btnGoogleLogin');
-    if (btnGoogle) btnGoogle.addEventListener('click', () => handleLogin('Google 부모회원', 'google', '🌐'));
+    if (btnGoogle) {
+      btnGoogle.addEventListener('click', async () => {
+        btnGoogle.disabled = true;
+        btnGoogle.style.opacity = '0.7';
+        const textSpan = btnGoogle.querySelector('.social-text');
+        if (textSpan) textSpan.innerText = 'Google 인증 중...';
+
+        try {
+          if (window.FirebaseSandbox) {
+            const res = await window.FirebaseSandbox.loginWithGoogle();
+            if (res.success && res.user) {
+              handleLogin(res.user.name || 'Google 부모님', 'google', '🌐', res.user.email);
+            } else {
+              console.warn('Google 로그인 안내 (Sandbox Fallback):', res.error);
+              handleLogin('Google 부모회원', 'google', '🌐');
+            }
+          } else {
+            handleLogin('Google 부모회원', 'google', '🌐');
+          }
+        } catch (e) {
+          console.error('Google Sign-In 에러:', e);
+          handleLogin('Google 부모회원', 'google', '🌐');
+        } finally {
+          btnGoogle.disabled = false;
+          btnGoogle.style.opacity = '1';
+          if (textSpan) textSpan.innerText = 'Google 계정으로 시작';
+        }
+      });
+    }
 
     const btnGuest = document.getElementById('btnGuestLogin');
     if (btnGuest) btnGuest.addEventListener('click', () => handleLogin('게스트 부모님', 'guest', '🎈'));
@@ -179,6 +208,7 @@ class KidStoryApp {
     const btnLogout = document.getElementById('btnHeaderLogout');
     if (btnLogout) {
       btnLogout.addEventListener('click', () => {
+        if (window.FirebaseSandbox) window.FirebaseSandbox.logout();
         localStorage.removeItem('kidstory_user');
         this.currentUser = null;
         if (this.appHeader) this.appHeader.style.display = 'none';
@@ -186,14 +216,122 @@ class KidStoryApp {
         if (this.viewOnboarding) this.viewOnboarding.classList.remove('active');
         if (this.viewStorybook) this.viewStorybook.classList.remove('active');
         if (this.viewLibrary) this.viewLibrary.classList.remove('active');
+        if (this.viewSettings) this.viewSettings.classList.remove('active');
         if (this.viewAuth) this.viewAuth.classList.add('active');
         if (window.audioEngine) window.audioEngine.playPageFlip();
       });
     }
+
+    this.bindSettingsEvents();
+  }
+
+  // =========================================================================
+  // ⚙️ [View 4] 부모 안심 설정 존 (Parent Settings & Safety Controls)
+  // =========================================================================
+  bindSettingsEvents() {
+    this.viewSettings = document.getElementById('viewSettings');
+    this.btnBackFromSettings = document.getElementById('btnBackFromSettings');
+    this.btnSaveSettings = document.getElementById('btnSaveSettings');
+    this.btnSettingsLogout = document.getElementById('btnSettingsLogout');
+    this.btnClearLocalVault = document.getElementById('btnClearLocalVault');
+
+    const openSettings = () => {
+      [this.viewOnboarding, this.viewStorybook, this.viewLibrary].forEach(v => {
+        if (v) v.classList.remove('active');
+      });
+      if (this.viewSettings) {
+        this.viewSettings.classList.add('active');
+        this.syncSettingsUI();
+      }
+      if (window.audioEngine) window.audioEngine.playSparkle();
+    };
+
+    const closeSettings = () => {
+      if (this.viewSettings) this.viewSettings.classList.remove('active');
+      if (this.viewOnboarding) this.viewOnboarding.classList.add('active');
+      if (window.audioEngine) window.audioEngine.playPageFlip();
+    };
+
+    // 상단 부모 설정 버튼 클릭 시 설정 페이지로 이동
+    const btnParentGate = document.getElementById('btnParentGate');
+    if (btnParentGate) {
+      btnParentGate.addEventListener('click', openSettings);
+    }
+
+    if (this.btnBackFromSettings) this.btnBackFromSettings.addEventListener('click', closeSettings);
+
+    if (this.btnSaveSettings) {
+      this.btnSaveSettings.addEventListener('click', () => {
+        this.saveSettingsValues();
+        closeSettings();
+      });
+    }
+
+    if (this.btnSettingsLogout) {
+      this.btnSettingsLogout.addEventListener('click', () => {
+        if (window.FirebaseSandbox) window.FirebaseSandbox.logout();
+        localStorage.removeItem('kidstory_user');
+        this.currentUser = null;
+        if (this.appHeader) this.appHeader.style.display = 'none';
+        if (this.userProfileBadge) this.userProfileBadge.style.display = 'none';
+        if (this.viewSettings) this.viewSettings.classList.remove('active');
+        if (this.viewAuth) this.viewAuth.classList.add('active');
+        if (window.audioEngine) window.audioEngine.playPageFlip();
+      });
+    }
+
+    if (this.btnClearLocalVault) {
+      this.btnClearLocalVault.addEventListener('click', () => {
+        if (confirm('기기에 저장된 맞춤 동화와 캐시 데이터를 모두 비우시겠습니까?')) {
+          localStorage.removeItem('kidstory_custom_stories_sandbox');
+          const countElem = document.getElementById('settingsVaultCount');
+          if (countElem) countElem.innerText = '보관 중인 맞춤 이야기: 0편';
+          alert('기기 금고 데이터가 초기화되었습니다.');
+        }
+      });
+    }
+  }
+
+  syncSettingsUI() {
+    if (this.currentUser) {
+      const nameElem = document.getElementById('settingsUserName');
+      const emailElem = document.getElementById('settingsUserEmail');
+      if (nameElem) nameElem.innerText = this.currentUser.name;
+      if (emailElem) emailElem.innerText = this.currentUser.email || (this.currentUser.provider + ' 연동 계정');
+    }
+    const nameInput = document.getElementById('settingsChildName');
+    if (nameInput) nameInput.value = this.childProfile.name;
+    const ageSelect = document.getElementById('settingsChildAge');
+    if (ageSelect) ageSelect.value = this.childProfile.age.toString();
+
+    const localStories = JSON.parse(localStorage.getItem('kidstory_custom_stories_sandbox') || '[]');
+    const countElem = document.getElementById('settingsVaultCount');
+    if (countElem) countElem.innerText = `보관 중인 맞춤 이야기: ${localStories.length}편`;
+  }
+
+  saveSettingsValues() {
+    const nameInput = document.getElementById('settingsChildName');
+    if (nameInput && nameInput.value.trim()) {
+      this.childProfile.name = nameInput.value.trim();
+      if (this.inputChildName) this.inputChildName.value = this.childProfile.name;
+      this.renderFullBodyAvatar();
+    }
+    const ageSelect = document.getElementById('settingsChildAge');
+    if (ageSelect) {
+      this.childProfile.age = parseInt(ageSelect.value, 10);
+    }
+    const toggleNight = document.getElementById('toggleSettingsNightMode');
+    if (toggleNight && toggleNight.checked) {
+      document.body.style.filter = 'sepia(0.2) contrast(0.95)';
+    } else {
+      document.body.style.filter = 'none';
+    }
+    if (window.audioEngine) window.audioEngine.playSparkle();
   }
 
   applyLoggedInUser(user) {
     if (this.viewAuth) this.viewAuth.classList.remove('active');
+    if (this.viewSettings) this.viewSettings.classList.remove('active');
     if (this.viewOnboarding) this.viewOnboarding.classList.add('active');
     if (this.appHeader) this.appHeader.style.display = 'flex';
     if (this.userProfileBadge) {

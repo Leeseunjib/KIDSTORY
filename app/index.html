@@ -11,6 +11,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
+  <!-- Firebase App, Auth, and Firestore SDKs for Real Google Login -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -473,6 +477,134 @@
         <button class="btn-primary-action" id="btnCreateNewFromLibrary" style="margin-top: 30px;">
           <span>✨ 새 캐릭터로 동화 만들기</span>
         </button>
+      </div>
+    </section>
+
+    <!-- [View 4] ⚙️ Parent Settings & Safety Zone (부모 설정 페이지) -->
+    <section class="view-section" id="viewSettings">
+      <div class="settings-container">
+        <div class="settings-card">
+          <div class="settings-header">
+            <button class="btn-back-settings" id="btnBackFromSettings" type="button">← 뒤로</button>
+            <div class="settings-title-group">
+              <span class="settings-badge">🔒 부모 안심 설정 존</span>
+              <h2 class="settings-title">환경설정 & 자녀 보호</h2>
+            </div>
+            <div style="width: 40px;"></div>
+          </div>
+
+          <!-- Settings Sections -->
+          <div class="settings-body">
+
+            <!-- 1. 계정 정보 (Account Info) -->
+            <div class="settings-group">
+              <h3 class="group-title">👤 로그인 계정 & 부모 정보</h3>
+              <div class="setting-item-box">
+                <div class="setting-item-row">
+                  <div class="setting-info">
+                    <strong id="settingsUserName">이건우 대표님</strong>
+                    <span id="settingsUserEmail">Google 연동 계정</span>
+                  </div>
+                  <button class="btn-settings-action" id="btnSettingsLogout" type="button">로그아웃</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. 아이 프로필 간편 변경 (Child Profile Quick Edit) -->
+            <div class="settings-group">
+              <h3 class="group-title">🧒 기본 주인공 아이 설정</h3>
+              <div class="setting-item-box">
+                <div class="setting-input-row">
+                  <label>아이 이름</label>
+                  <input type="text" id="settingsChildName" class="input-text" value="민우" maxlength="8">
+                </div>
+                <div class="setting-input-row">
+                  <label>아이 나이</label>
+                  <select id="settingsChildAge" class="input-select">
+                    <option value="3">3세</option>
+                    <option value="4" selected>4세</option>
+                    <option value="5">5세</option>
+                    <option value="6">6세</option>
+                    <option value="7">7세</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. 사운드 & 나레이션 요정 톤 설정 (Audio & Voice Controls) -->
+            <div class="settings-group">
+              <h3 class="group-title">🔊 사운드 & 나레이션 음성 톤</h3>
+              <div class="setting-item-box">
+                <div class="setting-toggle-row">
+                  <span>배경음악 (BGM)</span>
+                  <label class="switch">
+                    <input type="checkbox" id="toggleSettingsBgm" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="setting-toggle-row">
+                  <span>효과음 (SFX)</span>
+                  <label class="switch">
+                    <input type="checkbox" id="toggleSettingsSfx" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="setting-input-row" style="margin-top: 10px;">
+                  <label>요정 나레이터 톤</label>
+                  <select id="settingsVoiceTone" class="input-select">
+                    <option value="sweet" selected>✨ 상냥하고 따뜻한 요정 톤 (추천)</option>
+                    <option value="bright">🎈 씩씩하고 활기찬 친구 톤</option>
+                    <option value="calm">🌙 차분하고 포근한 수면 톤</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. 자녀 안심 스크린타임 (Screen Time Controls) -->
+            <div class="settings-group">
+              <h3 class="group-title">⏱️ 자녀 안심 이용 시간 제한</h3>
+              <div class="setting-item-box">
+                <div class="setting-input-row">
+                  <label>하루 독서 시간 제한</label>
+                  <select id="settingsScreenTimeLimit" class="input-select">
+                    <option value="15">15분 (추천)</option>
+                    <option value="30" selected>30분</option>
+                    <option value="60">1시간</option>
+                    <option value="0">제한 없음</option>
+                  </select>
+                </div>
+                <div class="setting-toggle-row" style="margin-top: 10px;">
+                  <span>야간 블루라이트 차단 모드</span>
+                  <label class="switch">
+                    <input type="checkbox" id="toggleSettingsNightMode">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. AI 엔진 & 기기 데이터 금고 (Data & Cache Vault) -->
+            <div class="settings-group">
+              <h3 class="group-title">🤖 AI 엔진 & 기기 보관함</h3>
+              <div class="setting-item-box">
+                <div class="setting-item-row">
+                  <div class="setting-info">
+                    <strong>기기 저장 동화 금고</strong>
+                    <span id="settingsVaultCount">보관 중인 맞춤 이야기: 3편</span>
+                  </div>
+                  <button class="btn-settings-action btn-danger" id="btnClearLocalVault" type="button">금고 비우기</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="settings-footer">
+            <button class="btn-primary-action" id="btnSaveSettings" type="button">
+              <span>💾 설정 저장하고 닫기</span>
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 

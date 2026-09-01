@@ -123,7 +123,74 @@ class FirebaseSandboxService {
         console.warn("☁️ [Firebase Sandbox] Firestore 조회 실패, 로컬 캐시 반환:", e.message);
       }
     }
-    return stories;
+  // 4. 구글 실제 로그인 (Google Sign-In with Firebase Auth)
+  async loginWithGoogle() {
+    await this.init();
+
+    if (window.location.protocol === 'file:') {
+      console.warn("⚠️ [Firebase Auth] file:// 프로토콜에서는 Google OAuth 팝업이 차단됩니다. 샌드박스 게스트 또는 호스팅 주소(https://kidstory-sandbox-2026.web.app)에서 실물 로그인이 실행됩니다.");
+      const demoUser = {
+        name: "구글 부모님 (로컬 테스트)",
+        email: "parent@google.com",
+        photoURL: null,
+        uid: this.currentUserId,
+        provider: "google",
+        emoji: "🌐"
+      };
+      return { success: true, user: demoUser, isLocalFallback: true };
+    }
+
+    if (!this.auth) {
+      return { success: false, error: "Firebase Auth SDK가 로드되지 않았습니다." };
+    }
+
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.addScope('profile');
+      provider.addScope('email');
+      const result = await this.auth.signInWithPopup(provider);
+      const user = result.user;
+
+      const profile = {
+        name: user.displayName || "구글 부모님",
+        email: user.email,
+        photoURL: user.photoURL,
+        uid: user.uid,
+        provider: "google",
+        emoji: "🌐",
+        loginAt: new Date().toISOString()
+      };
+
+      this.currentUserId = user.uid;
+      localStorage.setItem("kidstory_sandbox_uid", user.uid);
+      localStorage.setItem("kidstory_user", JSON.stringify(profile));
+
+      // Firestore에 사용자 등록
+      if (this.db) {
+        await this.db.collection("users").doc(user.uid).set({
+          ...profile,
+          lastLoginAt: new Date().toISOString()
+        }, { merge: true });
+      }
+
+      console.log("✅ [Firebase Auth] Google 로그인 성공:", profile);
+      return { success: true, user: profile };
+    } catch (err) {
+      console.error("❌ [Firebase Auth] Google 로그인 에러:", err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  // 5. 로그아웃
+  async logout() {
+    if (this.auth) {
+      try {
+        await this.auth.signOut();
+      } catch (e) {}
+    }
+    localStorage.removeItem("kidstory_user");
+    this.currentUserId = "sandbox_user_" + this.generateUid();
+    console.log("👋 [Firebase Auth] 로그아웃 완료");
   }
 }
 
